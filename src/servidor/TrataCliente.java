@@ -39,10 +39,15 @@ public class TrataCliente implements Runnable {
 	public void run() {
 		try {
 			while(true) {
-				byte[] b = new byte[13];
-				entrada.read(b);
+				byte[] transacao = new byte[2];
+				entrada.read(transacao);
+				byte tamanho = entrada.readByte();
+				byte[] dados = new byte[tamanho];
+				entrada.read(dados);
 				
-				trataComunicacao(b);
+				byte[] protocolo = ArrayUtils.addAll(ArrayUtils.addAll(transacao, tamanho), dados);
+				
+				trataComunicacaoLeitura(protocolo);
 				
 			}
 		} catch (IOException e) {
@@ -51,36 +56,31 @@ public class TrataCliente implements Runnable {
 		}
 	}
 	
-	public void trataComunicacao(byte[] b) throws IOException {
+	public void trataComunicacaoLeitura(byte[] b) throws IOException {
+		short idTransacao = (short) ((b[0] << 4) + ((b[1] >> 4) & 0x0F));
+		byte tipoDado = (byte) (b[1] & 0x0F);
+		int tamanhoTipo = Util.getTamanhoTipo(tipoDado);
+		int db = (b[3] << 8) + b[4];
+		short offsetDb = (short) ((b[5] << 5) + ((b[6] >> 3) & 31));
+		byte nBit = (byte) (b[6] & 07);
+
+		//byte[] valorLido = servidorCLP.read(DaveArea.DB, db, tamanhoTipo, offsetDb);
+		byte[] valorLido = {12, 65, 32, 18};
+		
+		enviaResposta(idTransacao, tipoDado, valorLido);
+		
+		/*
 		byte[] id = Arrays.copyOfRange(b, 0, 8);
 		byte tipo = b[8];
 		short db = ByteBuffer.wrap(Arrays.copyOfRange(b, 9, 11)).order(ByteOrder.BIG_ENDIAN).getShort();
 		short offset = ByteBuffer.wrap(Arrays.copyOfRange(b, 11, 13)).order(ByteOrder.BIG_ENDIAN).getShort();
-		//id = new String(ArrayUtils.removeAllOccurences(Arrays.copyOfRange(b, 0, 8), remove));
 		byte[] bs = servidorCLP.read(DaveArea.DB, db, tipo, offset);
-		//int valor = ByteBuffer.wrap(bs).getShort();
-		//System.out.println(valor);
 		enviaResposta(id, tipo, bs);
+		*/
 	}
 	
-	public void enviaResposta(byte[] id, byte tipo, byte[] valor) throws IOException {
-		byte[] complemento = new byte[4 - valor.length];
-		byte[] envia = new byte[13];
-		for(int i = 0; i < complemento.length ; i++) {
-			complemento[i] = 0;
-		}
-		
-		byte[] novoValor = ArrayUtils.addAll(complemento, valor);
-		
-		for(int i = 0; i < envia.length; i++) {
-			if (i < 8) {
-				envia[i] = id[i];
-			} else if (i < 9) {
-				envia[i] = tipo;
-			} else {
-				envia[i] = novoValor[i - 9];
-			}
-		}
+	public void enviaResposta(short idTransacao, byte tipo, byte[] valor) throws IOException {
+		byte[] envia = Util.protocoloResposta(idTransacao, tipo, valor);
 		
 		saida.write(envia);
 		saida.flush();
