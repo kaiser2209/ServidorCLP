@@ -23,11 +23,10 @@ public class Servidor {
 	public void executa() throws IOException {
 		ServerSocket servidor = new ServerSocket(this.porta);
 		System.out.println("Porta 12345 aberta!");
-		/*conexao = S7ConnectorFactory
+		conexao = S7ConnectorFactory
 				.buildTCPConnector()
 				.withHost("100.70.7.10")
 				.build();
-				*/
 		
 		while(true) {
 			Socket cliente = servidor.accept();

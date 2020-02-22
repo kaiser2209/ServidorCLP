@@ -64,8 +64,8 @@ public class TrataCliente implements Runnable {
 		short offsetDb = (short) ((b[5] << 5) + ((b[6] >> 3) & 31));
 		byte nBit = (byte) (b[6] & 07);
 
-		//byte[] valorLido = servidorCLP.read(DaveArea.DB, db, tamanhoTipo, offsetDb);
-		byte[] valorLido = {12, 65, 32, 18};
+		byte[] valorLido = servidorCLP.read(DaveArea.DB, db, tamanhoTipo, offsetDb);
+		//byte[] valorLido = {12, 65, 32, 18};
 		
 		enviaResposta(idTransacao, tipoDado, valorLido);
 		
