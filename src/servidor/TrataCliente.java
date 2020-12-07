@@ -57,17 +57,22 @@ public class TrataCliente implements Runnable {
 	}
 	
 	public void trataComunicacaoLeitura(byte[] b) throws IOException {
-		short idTransacao = (short) ((b[0] << 4) + ((b[1] >> 4) & 0x0F));
+		byte tipoTransacao = (byte) ((b[1] >> 4) & 0x0F);
+		short idTransacao = (short) ((b[0] << 4) + tipoTransacao);
 		byte tipoDado = (byte) (b[1] & 0x0F);
 		int tamanhoTipo = Util.getTamanhoTipo(tipoDado);
 		int db = (b[3] << 8) + b[4];
 		short offsetDb = (short) ((b[5] << 5) + ((b[6] >> 3) & 31));
 		byte nBit = (byte) (b[6] & 07);
-
-		byte[] valorLido = servidorCLP.read(DaveArea.DB, db, tamanhoTipo, offsetDb);
-		//byte[] valorLido = {12, 65, 32, 18};
 		
-		enviaResposta(idTransacao, tipoDado, valorLido);
+		//byte[] valorLido = {12, 65, 32, 18};
+		if (tipoTransacao > 010) {
+			byte[] valorLido = servidorCLP.read(DaveArea.DB, db, tamanhoTipo, offsetDb);
+			enviaResposta(idTransacao, tipoDado, valorLido);
+		} else {
+			byte[] envio = Arrays.copyOfRange(b, 7, b.length);
+			servidorCLP.write(DaveArea.DB, db, offsetDb, envio);
+		}
 		
 		/*
 		byte[] id = Arrays.copyOfRange(b, 0, 8);
